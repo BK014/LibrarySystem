@@ -1,0 +1,224 @@
+﻿@page
+@{}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SmartIT Employee Manager</title>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+
+    <script>
+
+        $(document).ready(function () {
+            getEmployeeList();
+        });
+
+        var Employee = {
+            id: 0,
+            name: "",
+            libraryPopulation: 0,
+            libraryAddress: ""
+        }
+
+        // Get all Employees to display
+        function getEmployeeList() {
+            // Call Web API to get a list of Employees
+            $.ajax({
+                url: '/api/GetLib/',   // get method for fet the data 
+                type: 'GET',
+                dataType: 'json',
+                success: function (employees) {
+                    employeeListSuccess(employees);
+                },
+                error: function (request, message, error) {
+                    handleException(request, message, error);
+                }
+            });
+        }
+
+        // Display all Employees returned from Web API call
+        function employeeListSuccess(employees) {
+            // Iterate over the collection of data
+            $("#employeeTable tbody").remove();
+            $.each(employees, function (index, employee) {
+                // Add a row to the employee table
+                employeeAddRow(employee);
+            });
+        }
+
+        // Add employee row to <table>
+        function employeeAddRow(employee) {
+            // First check if a <tbody> tag exists, add one if not
+            if ($("#employeeTable tbody").length == 0) {
+                $("#employeeTable").append("<tbody></tbody>");
+            }
+
+            // Append row to <table>
+            $("#employeeTable tbody").append(
+                employeeBuildTableRow(employee));
+        }
+
+        // Build a <tr> for a row of table data
+        function employeeBuildTableRow(employee) {
+            var newRow = "<tr>" +
+                // table data 
+                "<td>" + employee.id + "</td>" +
+                "<td><input   class='input-name' type='text' value='" + employee.name + "'/></td>" +
+                "<td><input  class='input-libraryPopulation'  type='number' value='" + employee.libraryPopulation + "'/></td>" +
+                "<td><input  class='input-libraryAddress' type='text' value='" + employee.libraryAddress + "'/></td>" +
+                "<td>" +
+                "<button type='button' " +
+                "onclick='employeeUpdate(this);' " +
+                "class='btn btn-default' " +
+                "data-id='" + employee.id + "' " +
+                "data-name='" + employee.name + "' " +
+                "data-libraryPopulation='" + employee.libraryPopulation + "' " +
+                "data-libraryAddress='" + employee.libraryAddress + "' " +
+                ">" +
+                "<span class='glyphicon glyphicon-edit' /> Update" +
+                "</button> " +
+                " <button type='button' " +
+                "onclick='employeeDelete(this);'" +
+                "class='btn btn-default' " +
+                "data-id='" + employee.id + "'>" +
+                "<span class='glyphicon glyphicon-remove' />Delete" +
+                "</button>" +
+                "</td>" +
+                "</tr>";
+
+            return newRow;
+        }
+
+        function onAddEmployee(item) {
+            var options = {};
+            options.url = "/api/AddLib";
+            options.type = "POST"; // post method for the insert data 
+            var obj = Employee;
+            obj.name = $("#name").val();
+            obj.libraryPopulation = parseInt($("#libraryPopulation").val(), 10);
+            obj.libraryAddress = $("#libraryAddress").val();
+            console.dir(obj);
+            options.data = JSON.stringify(obj);
+            options.contentType = "application/json";
+            options.dataType = "html";
+
+            options.success = function (msg) {
+                getEmployeeList();
+                $("#msg").html(msg);
+            },
+                options.error = function () {
+                    $("#msg").html("Error while calling the Web API!");
+                };
+            $.ajax(options);
+        }
+
+        function employeeUpdate(item) {
+            var id = $(item).data("id");
+            var options = {};
+            options.url = "/api/UpdateLib/"
+            options.type = "PUT";
+
+            var obj = Employee;
+            obj.id = $(item).data("id");
+            obj.name = $(".input-name", $(item).parent().parent()).val();
+            obj.libraryPopulation = parseInt($(".input-libraryPopulation", $(item).parent().parent()).val(), 10);
+            obj.libraryAddress = $(".input-libraryAddress", $(item).parent().parent()).val();
+            console.dir(obj);
+            options.data = JSON.stringify(obj);
+            options.contentType = "application/json";
+            options.dataType = "html";
+            options.success = function (msg) {
+                $("#msg").html(msg);
+            };
+            options.error = function () {
+                $("#msg").html("Error while calling the Web API!");
+            };
+            $.ajax(options);
+        }
+        // Delete function for delete the data fpr database 
+        function employeeDelete(item) {
+            var id = $(item).data("id");
+            var options = {};
+            options.url = "/api/DeleteLib/" // delete method 
+                + id;
+            options.type = "DELETE";
+            options.dataType = "html";
+            options.success = function (msg) {
+                console.log('msg= ' + msg);
+                $("#msg").html(msg);
+                getEmployeeList();
+            };
+            options.error = function () {
+                $("#msg").html("Error while calling the Web API!");
+            };
+            $.ajax(options);
+        }
+
+        // Handle exceptions from AJAX calls
+        function handleException(request, message, error) {
+            var msg = "";
+            msg += "Code: " + request.status + "\n";
+            msg += "Text: " + request.statusText + "\n";
+            if (request.responseJSON != null) {
+                msg += "Message" + request.responseJSON.Message + "\n";
+            }
+
+            alert(msg);
+        }
+    </script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+
+    <!-- Background image -->
+    <div class="p-3 text-center bg-image"
+         style="
+      background-image: url('https://mdbcdn.b-cdn.net/img/new/slides/041.jpg');
+      height: 200px;
+      margin-top: 48px;
+    ">
+        <div class="mask" style="background-color: rgba(0, 0, 0, 0.6);">
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="text-white">
+                    <h1 class="mb-3">Library System</h1>
+                    <a class="btn btn-outline-light btn-lg" href="#!" role="button">Call to action</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Background image -->
+    <div class="row">
+        <div class="col-lg-3"></div>
+        <div class="col-lg-6">
+        <form class="d-flex">
+            <table id="employeeTable" style="border: 1px solid #999" cellpadding="1">
+                <thead>
+                    <tr>
+                        <!--table row-->
+                        <td>Id </td>
+                        <td> Name </td>
+                        <td> Library Population </td>
+                        <td> Library Address </td>
+                        <td> </td>
+                    </tr>
+                    <tr><!--table data-->
+                        <td></td>
+                        <td><input id="name" type="text" /></td>
+                        <td><input id="libraryPopulation" type="number" /></td>
+                        <td><input id="libraryAddress" type="text" /></td>
+                        <td><input type="button" id="insert" value="Insert" onclick='onAddEmployee(this)' /></td>
+                </thead>
+            </table>
+
+            <br />
+        </form>
+        </div>
+       
+
+
+
+    </div>
+</body>
+</html>
